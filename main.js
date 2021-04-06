@@ -1,7 +1,13 @@
+Vue.config.devtools = true;
+
 Vue.component('product', {
     props: {
         premium: {
             type: Boolean,
+            required: true
+        },
+        cart: {
+            type: Number,
             required: true
         }
     },
@@ -37,11 +43,24 @@ Vue.component('product', {
                 :class="{ disabledButton: !inStock }"
                 >Add To Cart</button>
 
-            <div class="cart">
-                <p>Cart({{cart}})</p>
-            </div>
-
         </div>
+
+        <div class="review-container">
+        <div>
+            <h2>Reviews</h2>
+            <p v-show="reviews.length === 0">There are no reviews yet</p>
+            <ul>
+                <li v-for="review in reviews">
+                    <p>{{ review.name }}</p>
+                    <p>{{ review.review }}</p>
+                    <p>Rating: {{ review.rating }}</p>
+                </li>
+            </ul>
+        </div>
+        
+        <product-review @review-submitted="addReview" />
+    </div>
+
     </div>`,
     data() {
         return {
@@ -62,18 +81,23 @@ Vue.component('product', {
                 variantInventory: 2,
                 variantOnSale: true
             }],
-            cart: 0
+            reviews: []
         };
     },
     methods: {
         addToCart: function() {
-            this.cart++;
-            this.variants[this.selectedVariant].variantInventory--;
-            this.inStock = this.variants[this.selectedVariant].variantInventory !== 0;
+            var variant = this.variants[this.selectedVariant];
+            variant.variantInventory--;
+            this.inStock = variant.variantInventory !== 0;
+            this.$emit('add-to-cart', variant.variantId);
         },
         updateProduct: function(index) {
             this.selectedVariant = index;
         },
+        addReview(productReview) {
+            this.reviews.push(productReview);
+
+        }
     },
     computed: {
         title() { 
@@ -100,10 +124,83 @@ Vue.component('product', {
     }
 });
 
+Vue.component('product-review', {
+    template: `
+    <form class="review-form" @submit.prevent="onSubmit">
+
+        <p v-if="errors.length">
+            <b>Please correct the following error(s):</b>
+            <ul>
+                <li v-for="error in errors">{{ error }}</li>
+            </ul>
+        </p>
+
+        <p>
+        <label for="name">Name:</label>
+        <input id="name" v-model="name" placeholder="name">
+        </p>
+        
+        <p>
+        <label for="review">Review:</label>      
+        <textarea id="review" v-model="review" ></textarea>
+        </p>
+        
+        <p>
+        <label for="rating">Rating:</label>
+        <select id="rating" v-model.number="rating">
+            <option>5</option>
+            <option>4</option>
+            <option>3</option>
+            <option>2</option>
+            <option>1</option>
+        </select>
+        </p>
+            
+        <p>
+        <input type="submit" value="Submit">  
+        </p>    
+  
+  </form>
+    `,
+    data() {
+        return {
+            name: null,
+            review: null,
+            rating: 5,
+            errors: []
+        }
+    },
+    methods: {
+        onSubmit() {
+            if (this.name && this.review && this.rating) {
+                let productReview = {
+                    name: this.name,
+                    review: this.review,
+                    rating: this.rating
+                };
+                this.$emit('review-submitted', productReview);
+                this.name = null;
+                this.review = null;
+                this.rating = 5
+            } else {
+                if (!this.name) this.errors.push('Name is required!');
+                if (!this.review) this.errors.push('Review is required!');
+                if (!this.rating) this.errors.push('Rating is required!');
+            }
+        }
+    }
+})
+
 var app = new Vue({
     el: '#app',
     data: {
-        premium: true
+        premium: true,
+        cart: [],
+    },
+    methods: {
+        updateCart(id) {
+            this.cart.push(id);
+        }
     }
 });
 

@@ -62,11 +62,15 @@ body {
   .disabledButton {
     background-color: #d8d8d8;
   }
+
+  .review-container {
+    padding: 40px;
+  }
   
   .review-form {
     width: 400px;
     padding: 20px;
-    margin: 40px;
+    margin-top: 40px;
     border: 1px solid #d8d8d8;
   }
   
